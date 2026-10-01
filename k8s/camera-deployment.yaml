@@ -1,0 +1,49 @@
+# Camera simulator. The sample JPEGs are NOT in the image — the GCS bucket is
+# mounted at /mnt/assets via the Cloud Storage FUSE CSI driver, and the camera
+# reads them from IMAGES_DIR=/mnt/assets/images (set in the ConfigMap).
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: smartpark-camera
+  namespace: smartpark
+  labels: { app: smartpark-camera }
+spec:
+  replicas: 1                       # stateless — safe to scale up later
+  selector:
+    matchLabels: { app: smartpark-camera }
+  template:
+    metadata:
+      labels: { app: smartpark-camera }
+      annotations:
+        gke-gcsfuse/volumes: "true"          # inject the FUSE sidecar
+    spec:
+      serviceAccountName: smartpark-app
+      nodeSelector:
+        iam.gke.io/gke-metadata-server-enabled: "true"
+      containers:
+        - name: camera
+          image: australia-southeast2-docker.pkg.dev/smartpark-508006/smartpark-repo/camera-service:v2
+          ports: [{ containerPort: 8001 }]   # uvicorn listens on 8001
+          envFrom:
+            - configMapRef: { name: smartpark-config }
+          volumeMounts:
+            - { name: smartpark-assets, mountPath: /mnt/assets, readOnly: true }
+          readinessProbe:
+            httpGet: { path: /health/ready, port: 8001 }
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            httpGet: { path: /health/live, port: 8001 }
+            initialDelaySeconds: 10
+            periodSeconds: 20
+          resources:
+            requests: { cpu: "250m", memory: "512Mi" }
+            limits:   { cpu: "500m", memory: "1Gi" }
+      volumes:
+        - name: smartpark-assets
+          csi:
+            driver: gcsfuse.csi.storage.gke.io
+            readOnly: true
+            volumeAttributes:
+              bucketName: smartpark-508006-assets
+              mountOptions: "implicit-dirs"

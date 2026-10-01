@@ -1,0 +1,34 @@
+# Shared configuration for the API and camera. Both deployments pull it in with
+# envFrom, so keys only one service reads (e.g. MODEL_PATH vs IMAGES_DIR) are
+# simply ignored by the other (pydantic uses extra="ignore"; the camera reads
+# specific env vars). Keys use the EXACT names the code reads — see app/config.py
+# and camera_service/main.py.
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: smartpark-config
+  namespace: smartpark
+data:
+  # Must match between API and camera so car-park ids agree.
+  NUM_CARPARKS: "24"
+  # Paths INSIDE the GCS bucket mounted at /mnt/assets (see the deployments).
+  MODEL_PATH: "/mnt/assets/models/model.pt"
+  IMAGES_DIR: "/mnt/assets/images"
+  # Kubernetes internal DNS: <service-name>:<service-port>. See camera-service.yaml.
+  CAMERA_BASE_URL: "http://camera-service:8081"
+  # Shared Firestore store (cross-pod). project comes from GOOGLE_CLOUD_PROJECT
+  # via Application Default Credentials; database id matches the console.
+  REPOSITORY_BACKEND: "firestore"
+  FIRESTORE_DATABASE: "(default)"
+  GOOGLE_CLOUD_PROJECT: "smartpark-508006"
+  # App tunables (names as read by app/config.py).
+  MODEL_MAX_CONCURRENCY: "1"
+  CONFIDENCE_THRESHOLD: "0.25"
+  UUID_WINDOW_SECONDS: "30"
+  LOG_LEVEL: "INFO"
+  # §4.3 per-user response cache. "0" disables it — use that for the Locust
+  # scaling benchmark so numbers reflect raw inference, not cache hits.
+  # Re-enable (e.g. "5") after the 1/2/4/8 runs to quantify the gain.
+  CACHE_TTL_SECONDS: "0"
+  CACHE_MAX_ENTRIES: "1024"
+  VERIFY_CAMERA_CARPARK_COUNT: "true"

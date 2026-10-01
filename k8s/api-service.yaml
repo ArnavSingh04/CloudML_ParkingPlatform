@@ -1,0 +1,12 @@
+# Public entry point. port 80 is the internet-facing port; targetPort 8000 is the
+# FastAPI container port. The external IP can take a few minutes to appear.
+apiVersion: v1
+kind: Service
+metadata:
+  name: smartpark-api
+  namespace: smartpark
+spec:
+  type: LoadBalancer
+  selector: { app: smartpark-api }
+  ports:
+    - { port: 80, targetPort: 8000 }

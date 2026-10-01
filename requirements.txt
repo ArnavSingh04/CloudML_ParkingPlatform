@@ -1,0 +1,24 @@
+# SmartPark API service runtime dependencies (pinned).
+# torch + numpy + opencv are pulled in transitively by ultralytics.
+
+# Web framework / ASGI server
+fastapi==0.115.6
+uvicorn[standard]==0.34.0
+
+# HTTP client for concurrent camera calls
+httpx==0.28.1
+
+# Settings / validation
+pydantic==2.10.4
+pydantic-settings==2.7.1
+
+# Model inference + image handling
+ultralytics==8.3.55
+pillow==11.1.0
+
+# Operational dashboard plots (OPS-REQ-2), headless 'Agg' backend
+matplotlib==3.11.1
+
+# Shared, cross-pod persistence (car-park statuses + UUID request logs).
+# Uses Application Default Credentials — no JSON key is baked into the image.
+google-cloud-firestore==2.20.1

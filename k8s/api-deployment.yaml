@@ -1,0 +1,54 @@
+# API service. Persistence is Firestore (REPOSITORY_BACKEND=firestore) so every
+# replica shares one store — the "unique users in 30s" view stays correct across
+# pods. Credentials come from Workload Identity (ADC) via the smartpark-app SA;
+# model.pt is read from the GCS bucket mounted at /mnt/assets. No key, no baked-in
+# model.
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: smartpark-api
+  namespace: smartpark
+  labels: { app: smartpark-api }
+spec:
+  replicas: 1                       # start at 1; Firestore makes scaling >1 safe
+  selector:
+    matchLabels: { app: smartpark-api }
+  template:
+    metadata:
+      labels: { app: smartpark-api }
+      annotations:
+        gke-gcsfuse/volumes: "true"
+    spec:
+      serviceAccountName: smartpark-app
+      nodeSelector:
+        iam.gke.io/gke-metadata-server-enabled: "true"
+      containers:
+        - name: api
+          image: australia-southeast2-docker.pkg.dev/smartpark-508006/smartpark-repo/smartpark-api:v2
+          ports: [{ containerPort: 8000 }]   # uvicorn listens on 8000
+          envFrom:
+            - configMapRef: { name: smartpark-config }
+          volumeMounts:
+            - { name: smartpark-assets, mountPath: /mnt/assets, readOnly: true }
+          # Readiness only passes once the YOLO model has loaded (503 until then).
+          # The model loads from the FUSE mount at startup, so allow headroom.
+          readinessProbe:
+            httpGet: { path: /health/ready, port: 8000 }
+            initialDelaySeconds: 20
+            periodSeconds: 10
+            failureThreshold: 30
+          livenessProbe:
+            httpGet: { path: /health/live, port: 8000 }
+            initialDelaySeconds: 30
+            periodSeconds: 20
+          resources:
+            requests: { cpu: "1000m", memory: "2Gi" }
+            limits:   { cpu: "2000m", memory: "4Gi" }
+      volumes:
+        - name: smartpark-assets
+          csi:
+            driver: gcsfuse.csi.storage.gke.io
+            readOnly: true
+            volumeAttributes:
+              bucketName: smartpark-508006-assets
+              mountOptions: "implicit-dirs"

@@ -1,0 +1,2 @@
+Method,Name,Error,Occurrences
+GET,/api/annotate-carpark,"CatchResponseError('status 502: {""detail"":""Camera fetch failed: ""}')",1

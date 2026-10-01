@@ -1,0 +1,58 @@
+# Local orchestration for the SmartPark API + camera simulator.
+#
+# The model weights and supplied images live on the host and are mounted
+# read-only into the containers — they are never baked into the images.
+#
+# Keep NUM_CARPARKS identical across both services so their car-park ids agree.
+
+services:
+  camera:
+    build:
+      context: .
+      dockerfile: Dockerfile.camera
+    environment:
+      NUM_CARPARKS: ${NUM_CARPARKS:-24}
+      IMAGES_DIR: /images
+      SERVICE_NAME: smartpark-camera
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+    volumes:
+      - ./images:/images:ro
+    ports:
+      - "8001:8001"
+    healthcheck:
+      # slim images have no curl/wget; use urllib. Ready = at least one image.
+      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8001/health/ready').status==200 else 1)"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      MODEL_PATH: /models/model.pt
+      NUM_CARPARKS: ${NUM_CARPARKS:-24}
+      CAMERA_BASE_URL: http://camera:8001
+      CONFIDENCE_THRESHOLD: ${CONFIDENCE_THRESHOLD:-0.25}
+      UUID_WINDOW_SECONDS: ${UUID_WINDOW_SECONDS:-30}
+      # §4.3 performance optimisation: cache repeated find-carparks calls from
+      # the same user. Set to 0 when benchmarking raw inference throughput.
+      CACHE_TTL_SECONDS: ${CACHE_TTL_SECONDS:-5}
+      SERVICE_NAME: smartpark-api
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+    volumes:
+      - ./model:/models:ro
+    ports:
+      - "8000:8000"
+    healthcheck:
+      # Ready = YOLO model loaded (returns 503 until then).
+      test: ["CMD", "python", "-c", "import urllib.request,sys; sys.exit(0 if urllib.request.urlopen('http://localhost:8000/health/ready').status==200 else 1)"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 30s
+    depends_on:
+      camera:
+        condition: service_healthy

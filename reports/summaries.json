@@ -1,0 +1,50 @@
+[
+  {
+    "label": "pods-1",
+    "requests": "88",
+    "failures": "0",
+    "avg_ms": "35255.954611369154",
+    "p50_ms": "32000.0",
+    "p95_ms": "63000",
+    "rps": "0.3162976925348891",
+    "ready_pods": 1,
+    "wanted_pods": 1,
+    "locust_seconds": 281.9
+  },
+  {
+    "label": "pods-2",
+    "requests": "115",
+    "failures": "1",
+    "avg_ms": "30581.558162606645",
+    "p50_ms": "26000.0",
+    "p95_ms": "63000",
+    "rps": "0.4113832124285183",
+    "ready_pods": 2,
+    "wanted_pods": 2,
+    "locust_seconds": 280.0
+  },
+  {
+    "label": "pods-4",
+    "requests": "245",
+    "failures": "0",
+    "avg_ms": "16974.505936738333",
+    "p50_ms": "13000.0",
+    "p95_ms": "38000",
+    "rps": "0.8779233456601772",
+    "ready_pods": 4,
+    "wanted_pods": 4,
+    "locust_seconds": 281.4
+  },
+  {
+    "label": "pods-8",
+    "requests": "360",
+    "failures": "0",
+    "avg_ms": "10885.291851113368",
+    "p50_ms": "8100.0",
+    "p95_ms": "31000",
+    "rps": "1.287922394028274",
+    "ready_pods": 6,
+    "wanted_pods": 8,
+    "locust_seconds": 281.4
+  }
+]

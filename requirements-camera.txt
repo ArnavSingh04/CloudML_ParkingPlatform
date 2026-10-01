@@ -1,0 +1,5 @@
+# Camera simulator runtime dependencies (pinned).
+# Intentionally minimal: no ML libraries, so Dockerfile.camera stays small.
+
+fastapi==0.115.6
+uvicorn[standard]==0.34.0

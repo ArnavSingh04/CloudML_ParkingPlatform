@@ -1,0 +1,19 @@
+# Camera simulator image — deliberately small (no ML dependencies).
+# NOTE: the supplied images are NOT copied in — they are mounted at runtime
+# (see docker-compose.yml) via IMAGES_DIR / volumes.
+FROM python:3.12-slim
+
+WORKDIR /srv
+
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    IMAGES_DIR=/images
+
+COPY requirements-camera.txt .
+RUN pip install --no-cache-dir -r requirements-camera.txt
+
+# Only the camera code — never the images.
+COPY camera_service ./camera_service
+
+EXPOSE 8001
+CMD ["uvicorn", "camera_service.main:app", "--host", "0.0.0.0", "--port", "8001"]

@@ -1,0 +1,22 @@
+# Keep build context small AND guarantee the model/images never enter an image.
+.git/
+.venv/
+venv/
+model/
+images/
+sample/
+result/
+tests/
+**/__pycache__/
+*.pyc
+*.ipynb
+.env
+.pytest_cache/
+README.md
+# Docs / assets not needed by any build stage (keep the context lean).
+*.pdf
+codebase-breakdown.md
+.env.example
+pytest.ini
+Dockerfile*
+docker-compose.yml
